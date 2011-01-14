@@ -1,0 +1,11 @@
+<configuration>
+  <netkernel>
+    <installDirectory>/Users/randolph.kahle/NetKernel/NK4EE41_twitterstream</installDirectory>
+  </netkernel>
+  <modules>
+    <module>/Users/randolph.kahle/git/project/twitterstream/net.databliss.netkernel.tpt.twitter/</module>
+    <module>/Users/randolph.kahle/git/project/twitterstream/net.databliss.netkernel.app.twitterstreamservice/</module>
+  </modules>
+</configuration>
+    
+

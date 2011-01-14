@@ -1,0 +1,50 @@
+#!/usr/bin/env groovy
+
+def config
+
+try
+  {
+  config = new XmlSlurper().parse(new File('configureNetKernel.xml'))
+  }
+catch(FileNotFoundException cnfe)
+  {
+  System.out.println("A local file named configureNetKernel.xml was expected and not found");
+  System.exit(-1);
+  }
+
+def installDirectory = config.netkernel.installDirectory
+def modulesFile = new File(installDirectory.toString() + "/etc/modules.xml")
+def modules = new XmlParser().parse(modulesFile)
+
+// Find modules to remove
+toRemove = []
+for (module in modules)
+  {
+  if (module.'@managed' == 'true')
+    {
+    toRemove += module
+    }
+  }
+
+
+// Remove old configured module entries
+for (module in toRemove)
+  {
+  modules.remove(module)
+  }
+
+// Add modules from configuration file
+config.modules.module.each{ module ->
+  node = new XmlParser().parseText("<module runlevel='2' managed='true'>file:" + module.text() + "</module>")
+  modules.append(node)
+}
+
+// Write the new modules.xml file into the NetKernel installation
+PrintWriter writer = new PrintWriter(installDirectory.toString() + "/etc/modules.xml")
+
+xmlWriter = new XmlNodePrinter(writer)
+xmlWriter.setPreserveWhitespace(true)
+xmlWriter.setQuote("'")
+xmlWriter.print(modules)
+
+println "Updated NetKernel at " + installDirectory.toString()

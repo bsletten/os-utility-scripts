@@ -1,0 +1,52 @@
+#!/usr/bin/env groovy
+/**
+* File: cleanNetKernel.sh
+*
+* Purpose: This reads a local 'configureNetKernel.xml' file and
+*          clears the referenced installation of NetKernel of all added
+*          project modules.
+*/
+
+def config
+
+try
+  {
+  config = new XmlSlurper().parse(new File('configureNetKernel.xml'))
+  }
+catch(FileNotFoundException cnfe) 
+  {
+  System.out.println("A local file named configureNetKernel.xml was expected and not found");
+  System.exit(-1);
+  }
+
+def installDirectory = config.netkernel.installDirectory
+def modulesFile = new File(installDirectory.toString() + "/etc/modules.xml")
+def modules = new XmlParser().parse(modulesFile)
+
+// Find modules to remove
+toRemove = []
+for (module in modules)
+  {
+  if (module.'@managed' == 'true')
+    {
+    toRemove += module
+    }
+  }
+
+
+// Remove old configured module entries
+for (module in toRemove)
+  {
+  modules.remove(module)
+  }
+
+// Write the new modules.xml file into the NetKernel installation
+PrintWriter writer = new PrintWriter(installDirectory.toString() + "/etc/modules.xml")
+
+xmlWriter = new XmlNodePrinter(writer)
+xmlWriter.setPreserveWhitespace(true)
+xmlWriter.setQuote("'")
+xmlWriter.print(modules)
+
+println "Updated NetKernel at " + installDirectory.toString() + " and removed project modules"
+
