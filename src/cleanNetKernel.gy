@@ -1,10 +1,19 @@
 #!/usr/bin/env groovy
 /**
-* File: cleanNetKernel.sh
-*
-* Purpose: This reads a local 'configureNetKernel.xml' file and
-*          clears the referenced installation of NetKernel of all added
-*          project modules.
+ * File: cleanNetKernel.gy
+ *
+ * Purpose: This reads a local 'configureNetKernel.xml' file and
+ *          clears the referenced installation of NetKernel of all added
+ *          project modules.
+ *
+ * Author:  Randolph Kahle
+ *
+ * Copyright (c) 2011 Databliss, LLC
+ *
+ * License: MIT  http://www.opensource.org/licenses/mit-license
+ *
+ * Date:    2011-01-14
+ *
 */
 
 def config
