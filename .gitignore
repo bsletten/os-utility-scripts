@@ -3,3 +3,4 @@
 .DS_Store
 # Also ignore special files
 out/*
+*.iws
