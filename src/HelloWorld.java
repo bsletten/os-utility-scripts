@@ -1,8 +1,15 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class HelloWorld
   {
-  public static void main(String[] args)
+  public static void main(String[] argv) throws IOException
     {
-    System.out.println("Hello World.");
+        BufferedReader buff = new BufferedReader(new InputStreamReader(System.in));
+        System.out.print("What's your name? ");
+        System.out.flush();
+        String s = buff.readLine();
+        System.out.printf("Hello, %s!", s);
     }
   }
