@@ -4,3 +4,5 @@
 # Also ignore special files
 out/*
 *.iws
+*.iml
+*.ipr
