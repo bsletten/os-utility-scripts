@@ -1,8 +1,0 @@
-#!/usr/bin/env groovy
-
-System.out.println("Hello");
-x = 'd'
-assert x == 'hey, this is really the context of x'
-def a = 5
-def b = 10
-assert b == a + a
