@@ -1,0 +1,65 @@
+#!/usr/bin/env groovy
+
+/**
+ * File: removeModules.gy
+ *
+ * Purpose: The scripts removes modules associated with an IntelliJ installed into
+ *          a running instance of NetKernel.
+ *
+ *          It does this by removing the XML file with the IntelliJ project name from the
+ *          directory NetKernel monitors for additional modules. Typically this is
+ *          [install]/etc/modules.d/ For now, we'll presume this is the case but in the
+ *          future we'll ask NetKernel for this information.
+ *
+ *
+ * Author:  Randolph Kahle
+ *
+ * Copyright (c) 2012 Databliss, LLC
+ *
+ * License: MIT  http://www.opensource.org/licenses/mit-license
+ *
+ * Date:    2012-06-28
+ *
+ */
+
+// Check that we are running in an IntelliJ project directory by looking for the .idea directory
+File dirIDEA = new File(".idea")
+if (!dirIDEA.isDirectory())
+{
+  System.out.println("This is not an IntelliJ project directory")
+  System.exit(-1)
+}
+
+
+
+// Get the directory where this script was executed
+def projectDirectory = System.getProperty("user.dir")
+
+// Get the name of the parent directory to use as the name of the modules.xml file in the modules.d directory
+def projectName = projectDirectory.split("/").last()
+
+// Check that NetKernel is running as we need that to learn where it is installed
+// This URL will return the the local absolute file URL location of the installation location of NetKernel
+def installLocationURL = 'http://localhost:1060/tools/scriptplaypen?action2=execute&type=gy&example&identifier&name&space&script=context%2EcreateResponseFrom%28context%2Esource%28%22netkernel%3A%2Fconfig%2Fnetkernel%2Einstall%2Epath%22%29%29'
+def installLocation
+def modulesExtensionLocation
+try
+{
+  installLocation = new URL(installLocationURL).text
+  modulesExtensionLocation = installLocation + "etc/modules.d/"
+  modulesExtensionLocation = modulesExtensionLocation.replace('file:/', '/')
+} catch (Exception e)
+{
+  println 'NetKernel is not running or not available on port 1060'
+  System.exit(-1)
+}
+
+
+// Test if the modules.d file is already present (pre-condition is that it must not be)
+File file = new File(modulesExtensionLocation + projectName + ".xml")
+
+if (file.exists())
+  {
+  file.deleteOnExit()
+  println "${projectName}.xml was removed from NetKernel"
+  }

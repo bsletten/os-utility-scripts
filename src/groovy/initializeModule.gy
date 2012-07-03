@@ -1,0 +1,353 @@
+#!/usr/bin/env groovy
+
+/**
+ * File:    initializeModule.gy
+ *
+ * Purpose: The script is run within a directory that is to become an IntelliJ project for
+ *          a NetKernel module.
+ *
+ *          This script will create the necessary directories and file based on the name of
+ *          the directory.
+ *
+ *          For example, running this script in a directory urn.net.databliss.netkernel.overlay
+ *          will create:
+ *
+ *          urn.net.databliss.netkernel.overlay.iml
+ *          src
+ *          src/main
+ *          src/main/java
+ *          src/main/resources
+ *          src/main/resources/module.xml
+ *
+ * Author:  Randolph Kahle
+ *
+ * Copyright (c) 2012 Databliss, LLC
+ *
+ * License: MIT  http://www.opensource.org/licenses/mit-license
+ *
+ * Date:    2012-06-27
+ *
+ */
+
+
+// Get the directory where this script was executed
+def projectDirectory = System.getProperty("user.dir")
+
+println projectDirectory
+
+// Get the name of the parent directory to use as the name of the modules.xml file in the modules.d directory
+def projectName = projectDirectory.split("/").last()
+
+
+println projectName
+
+// ===== Create the IntelliJ *.iml file =====
+def imlXML = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://\$MODULE_DIR\$">
+      <sourceFolder url="file://\$MODULE_DIR\$/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://\$MODULE_DIR\$/src/main/resources" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="NetKernel" level="application" />
+  </component>
+</module>
+"""
+writeXML(imlXML, projectName + ".iml")
+
+
+
+// ===== Create new directories for project / module structure =====
+createDir("src")
+createDir("src/main")
+createDir("src/main/java")
+createDir("src/main/resources")
+createDir("src/main/resources/resources")
+createDir("src/main/resources/resources/mappers")
+createDir("src/main/resources/etc")
+createDir("src/main/resources/etc/system")
+
+dirPath = "src/main/java"
+classPath = projectName.substring(projectName.indexOf(".")+1).replace('.', '/')
+classPathParts = classPath.split('/')
+classPathParts.each {
+  dirPath = dirPath + '/' + it
+  createDir(dirPath)
+}
+createDir(dirPath + '/doc')
+createDir(dirPath + '/images')
+createDir(dirPath + '/endpoints')
+
+println classPath
+println dirPath
+
+// Create a module.xml file that includes all types of spaces. The developer can delete the ones that don't apply
+def moduleXML = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<module version="2.0">
+  <meta>
+    <identity>
+      <uri>urn:${classPath.replace('/',':')}</uri>
+      <version>0.0.1</version>
+    </identity>
+    <info>
+      <name>System / Service</name>
+      <description>Add description</description>
+      <icon>res:/${classPath}/images/icon.png</icon>
+    </info>
+  </meta>
+
+  <system>
+    <dynamic />
+  </system>
+
+  <rootspace name="System / Service"
+    uri="urn:${classPath.replace('/',':')}">
+    <!--
+    <fileset>
+      <regex>res:/etc/(system/(SimpleDynamicImportHook.xml|ControlPanel.xml)|pdsConfig.xml)</regex>
+    </fileset>
+    -->
+
+    <mapper>
+      <config>res:/resources/mappers/serviceMapper.xml</config>
+      <space>
+          <import>
+            <uri>urn:org:netkernel:ext:system</uri>
+          </import>
+            <import>
+              <uri>urn:org:netkernel:ext:layer1</uri>
+            </import>
+        <import>
+          <uri>urn:org:netkernel:lang:groovy</uri>
+        </import>
+        <fileset>
+          <regex>res:/resources/mappers/serviceMapper.xml</regex>
+        </fileset>
+      </space>
+    </mapper>
+
+    <fileset>
+      <regex>res:/${classPath}/images/icon.png</regex>
+      <rewrite>res:/resources/images/icon.png</rewrite>
+    </fileset>
+  </rootspace>
+
+
+
+  <rootspace
+    name="System / Service / HTTP"
+    uri="urn:${classPath.replace('/',':')}:http"
+    public="true"
+    >
+
+    <mapper>
+      <config>res:/resources/mappers/httpMapper.xml</config>
+      <space>
+        <fileset>
+          <regex>res:/resources/mappers/.*xml</regex>
+        </fileset>
+        <import>
+          <uri>urn:org:netkernel:lang:groovy</uri>
+        </import>
+      </space>
+    </mapper>
+
+    <!-- Import ourselves into the Front End Fulcrum -->
+    <fileset>
+      <regex>res:/etc/system/SimpleDynamicImportHook.xml</regex>
+    </fileset>
+  </rootspace>
+
+
+
+  <rootspace
+    name="System / Service / Documentation"
+    public="true"
+    uri="urn:${classPath.replace('/',':')}:doc"
+    >
+
+    <fileset>
+      <regex>res:/etc/system/(Books|Docs).xml</regex>
+    </fileset>
+    <fileset>
+      <regex>res:/${classPath}/doc/.*</regex>
+    </fileset>
+  </rootspace>
+</module>
+"""
+
+writeXML(moduleXML, "src/main/resources/module.xml")
+
+serviceMapperXML = """\
+<config>
+  <endpoint>
+    <grammar>
+      <active>
+        <identifier>active:callMe</identifier>
+      </active>
+    </grammar>
+    <request>
+      <identifier>active:callMe</identifier>
+    </request>
+  </endpoint>
+</config>
+"""
+
+writeXML(serviceMapperXML, "src/main/resources/resources/mappers/serviceMapper.xml")
+
+httpMapperXML = """\
+<config>
+  <endpoint>
+    <grammar>
+      <active>
+        <identifier>active:callMe</identifier>
+      </active>
+    </grammar>
+    <request>
+      <identifier>active:callMe</identifier>
+    </request>
+  </endpoint>
+</config>
+"""
+
+writeXML(httpMapperXML, "src/main/resources/resources/mappers/httpMapper.xml")
+
+
+
+// ===== Documentation =====
+
+
+bookXML = """\
+<books>
+  <book>
+    <id>book:${classPath.replace('/',':')}</id>
+    <title>Book Title</title>
+    <author>Book author</author>
+    <publisher>Book publisher</publisher>
+    <date/>
+    <modified/>
+    <icon/>
+    <keywords/>
+    <toc>
+      <item id="doc:${classPath.replace('/',':')}:title" />
+      <separator/>
+      <item id="doc:${classPath.replace('/',':')}:license:mit" title="MIT License" />
+      <item id="doc:${classPath.replace('/',':')}:license:commercial" title="Commercial License" />
+    </toc>
+  </book>
+</books>
+"""
+
+writeXML(bookXML, 'src/main/resources/etc/system/Books.xml')
+
+docsXML = """\
+<docs>
+  <doc>
+    <id>doc:${classPath.replace('/',':')}:title</id>
+    <title>Title</title>
+    <desc/>
+    <uri>res:/${classPath}/doc/title.txt</uri>
+    <category>doc accessor</category>
+  </doc>
+  <doc>
+    <id>doc:${classPath.replace('/',':')}:license:mit</id>
+    <title>License</title>
+    <desc>Module license</desc>
+    <uri>res:/${classPath}/doc/license-mit.txt</uri>
+    <category>module license</category>
+  </doc>
+  <doc>
+    <id>doc:${classPath.replace('/',':')}:license:commercial</id>
+    <title>License</title>
+    <desc>Module license</desc>
+    <uri>res:/${classPath}/doc/license-commercial.txt</uri>
+    <category>module license</category>
+  </doc>
+</docs>
+"""
+
+writeXML(docsXML, 'src/main/resources/etc/system/Docs.xml')
+
+docTitle = """\
+=Book Title=
+
+This contains the title information for the book
+"""
+
+writeText(docTitle, dirPath + '/doc/title.txt')
+
+
+
+
+docLicenseMIT = """\
+=MIT LICENSE=
+
+==The MIT License (MIT)==
+
+Copyright (c) <year> <copyright holders>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this
+software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
+writeText(docLicenseMIT, dirPath + '/doc/license-mit.txt')
+
+docLicenseCommercial = """\
+=Commercial License=
+
+"""
+
+writeText(docLicenseCommercial, dirPath + '/doc/license-commercial.txt')
+
+// ===== Various other things =====
+
+writeText("", 'src/main/resources/etc/messages.properties')
+
+
+System.exit(0)
+
+void createDir(String dir)
+{
+  fileDir = new File(dir)
+  if (!fileDir.exists())
+  {
+    fileDir.mkdir()
+  }
+}
+
+void writeXML(xml, String path)
+{
+  def module = new XmlParser().parseText(xml)
+  writer = new PrintWriter(path)
+  xmlWriter = new XmlNodePrinter(writer)
+  xmlWriter.setPreserveWhitespace(true)
+  xmlWriter.setQuote("'")
+  xmlWriter.print(module)
+
+}
+
+void writeText(text, String path)
+{
+  PrintWriter writer = new PrintWriter(new File(path))
+  writer.print(text)
+  writer.flush()
+  writer.close()
+}

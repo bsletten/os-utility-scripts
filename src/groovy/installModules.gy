@@ -1,0 +1,182 @@
+#!/usr/bin/env groovy
+
+/**
+ * File: installModules.gy
+ *
+ * Purpose: The scripts installs modules associated with an IntelliJ project into
+ *          a running instance of NetKernel.
+ *
+ *          It does this by creating an XML file in the form of the NetKernel modules.xml
+ *          structure and placing it into the directory NetKernel monitors for additional
+ *          modules. Typically this is [install]/etc/modules.d/ For now, we'll presume this
+ *          is the case but in the future we'll ask NetKernel for this information.
+ *
+ *
+ * Author:  Randolph Kahle
+ *
+ * Copyright (c) 2012 Databliss, LLC
+ *
+ * License: MIT  http://www.opensource.org/licenses/mit-license
+ *
+ * Date:    2012-06-27
+ *
+ */
+
+//println  'file:///Users/randolph.kahle/development/source/netkernel/package/bb-overlay/../../module/urn.net.databliss.netkernel.overlay/urn.net.databliss.netkernel.overlay.iml'.split('/')
+
+
+
+// Check that we are running in an IntelliJ project directory by looking for the .idea directory
+File dirIDEA = new File(".idea")
+if (!dirIDEA.isDirectory())
+{
+  System.out.println("This is not an IntelliJ project directory")
+  System.exit(-1)
+}
+
+
+
+// Get the directory where this script was executed
+def projectDirectory = System.getProperty("user.dir")
+
+// Get the name of the parent directory to use as the name of the modules.xml file in the modules.d directory
+def projectName = projectDirectory.split("/").last()
+
+// Get the project build output directory from the misc.xml file
+file = new File(".idea/misc.xml")
+project = new XmlParser().parse(file)
+projectOutputURL = project.component.findAll { it.'@name'.contains('ProjectRootManager') }.output.'@url'[0].text()
+projectOutputURL = projectOutputURL.replace('$', '')
+projectOutputURL = projectOutputURL.replace('PROJECT_DIR', projectDirectory)
+projectOutputURL = normalizeFileURL(projectOutputURL)
+
+
+// Gather information about the IntelliJ modules - each of which is a NetKernel module
+
+// Now we need to take the information from the IntelliJ .idea/modules.xml file and create a corresponding
+// file for NetKernel
+
+def moduleIMLUrl = []  // File URL for the module's IntelliJ meta information file (*.iml)
+def moduleUrl = []     // File URL of the module root location
+def moduleOutUrl = []  // File URL of the output of the module. This is what NetKernel needs
+
+// Add modules from configuration file
+def file = new File(".idea/modules.xml")
+def project = new XmlParser().parse(file)
+
+project.component.modules.module.each { module ->
+
+  def filePath = module.@filepath
+  filePath = filePath.replace('$', '')
+  filePath = filePath.replace('PROJECT_DIR', projectDirectory)
+  filePath = normalizeFileURL(filePath)
+  moduleIMLUrl.add(filePath)
+
+  def fileURL = module.@fileurl
+  fileURL = fileURL.replace('$', '')
+  fileURL = fileURL.replace('PROJECT_DIR', projectDirectory)
+  fileURL = normalizeFileURL(fileURL)
+  moduleIMLUrl.add(fileURL)
+
+  // Check to see if a module overrides the default output settings...
+  module = new XmlParser().parse(new File(filePath))
+
+  if (module.component.findAll{it.'@inherit-compiler-output'.contains('true')}.size()> 0)
+  {
+    moduleOutputURL = projectOutputURL + '/production/' + filePath.split('/')[filePath.split('/').size()-2] + '/'
+    moduleOutUrl.add(moduleOutputURL)
+  }
+  else
+  {
+    filePathModuleOutputURL = module.component.output.@url[0]
+    filePathModuleOutputURL = filePathModuleOutputURL.replace('$','')
+    pathPart = filePath.substring(0,filePath.lastIndexOf('/')+1)
+    filePathModuleOutputURL = filePathModuleOutputURL.replace('MODULE_DIR', pathPart)
+    filePathModuleOutputURL = normalizeFileURL(filePathModuleOutputURL) + '/'
+    moduleOutUrl.add(filePathModuleOutputURL)
+  }
+}
+
+
+// Now create the XML structure that describes the module "output" locations so that we can inform NetKernel
+
+def modules = new XmlParser().parseText("<modules> </modules>")
+
+moduleOutUrl.each { fileURL ->
+  node = new XmlParser().parseText("<module runlevel='7'>" + fileURL + "</module>")
+  modules.append(node)
+}
+
+// Check that NetKernel is running as we need that to learn where it is installed
+// This URL will return the the local absolute file URL location of the installation location of NetKernel
+def installLocationURL = 'http://localhost:1060/tools/scriptplaypen?action2=execute&type=gy&example&identifier&name&space&script=context%2EcreateResponseFrom%28context%2Esource%28%22netkernel%3A%2Fconfig%2Fnetkernel%2Einstall%2Epath%22%29%29'
+def installLocation
+def modulesExtensionLocation
+try
+{
+  installLocation = new URL(installLocationURL).text
+  modulesExtensionLocation = installLocation + "etc/modules.d/"
+  modulesExtensionLocation = modulesExtensionLocation.replace('file:/', '/')
+} catch (Exception e)
+{
+  println 'NetKernel is not running or not available on port 1060'
+  System.exit(-1)
+}
+
+// Test if the modules.d file is already present (pre-condition is that it must not be)
+File file1 = new File(modulesExtensionLocation + projectName + ".xml")
+
+if (file1.exists())
+{
+  println 'The file ' + file1.toString() + ' already exists'
+  System.exit(-1)
+}
+
+// Write the new modules.xml file into the NetKernel installation
+PrintWriter writer = new PrintWriter(modulesExtensionLocation + projectName + ".xml")
+
+xmlWriter = new XmlNodePrinter(writer)
+xmlWriter.setPreserveWhitespace(true)
+xmlWriter.setQuote("'")
+xmlWriter.print(modules)
+
+// This function normalizes URLs with /../ sections to a full, direct path
+String normalizeFileURL(String url)
+{
+  fileParts = url.split("/")
+
+  for (int i = 0; i < fileParts.size(); i++)
+  {
+    // Each time we find '..' we clear out two entries
+    if ("..".equals(fileParts[i]))
+    {
+      fileParts[i] = null;
+      int j = i;
+      while (0 <= j && fileParts[j] == null)
+      {
+        j = j - 1;
+      }
+      fileParts[j] = null;
+    }
+
+  }
+
+  // Assemble URL again
+  StringBuilder newFileURL = new StringBuilder()
+
+  for (int k = 0; k < fileParts.size(); k++)
+  {
+    String part = fileParts[k]
+    if (null != part)
+    {
+      newFileURL.append(part)
+      if (k < fileParts.size()-1)
+        {
+        newFileURL.append('/')
+        }
+    }
+  }
+
+  return newFileURL.toString()
+
+}
