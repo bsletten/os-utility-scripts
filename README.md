@@ -8,9 +8,10 @@ Directory Structure
 
 While these scripts should work with any directory structure, they were designed with the following structure in use:
 
+<pre>
 ../source/netkernel/module/{module-uri}
 ../source/netkernel/package/{package-name}
-
+</pre>
 
 Installation
 ------------
