@@ -60,6 +60,59 @@ def imlXML = """\
 writeXML(imlXML, projectName + ".iml")
 
 
+// ===== Create Eclipse .project file =====
+def projectXmlFile = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>$projectName</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.m2e.core.maven2Builder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+		<nature>org.eclipse.m2e.core.maven2Nature</nature>
+	</natures>
+</projectDescription>
+"""
+writeXML(projectXmlFile, ".project")
+
+// ===== Create Eclipse .classpath file =====
+def classpathFile = """\
+<classpath>
+	<classpathentry kind="src" output="target/classes" path="src/main/java"/>
+	<classpathentry excluding="**" kind="src" output="target/classes" path="src/main/resources"/>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java"/>
+	<classpathentry excluding="**" kind="src" output="target/test-classes" path="src/test/resources"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>
+"""
+writeXML(classpathFile, ".classpath")
+
+// ===== Create Maven .pom file =====
+def pomFile = """\
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>groupId</groupId>
+  <artifactId>$projectName</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+</project>
+"""
+writeXML(pomFile, "pom.xml")
+
 
 // ===== Create new directories for project / module structure =====
 createDir("src")
@@ -70,6 +123,11 @@ createDir("src/main/resources/resources")
 createDir("src/main/resources/resources/mappers")
 createDir("src/main/resources/etc")
 createDir("src/main/resources/etc/system")
+
+// ===== Create test folder structure =====
+createDir("src/test")
+createDir("src/test/java")
+createDir("src/test/resources")
 
 dirPath = "src/main/java"
 classPath = projectName.substring(projectName.indexOf(".")+1).replace('.', '/')
