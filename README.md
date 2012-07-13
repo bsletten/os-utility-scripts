@@ -25,7 +25,8 @@ Usage
 
 initializeModule.gy
 
-This script will initialize a NetKernel and IntelliJ module based on the name of the directory in which it is run.
+This script will initialize a NetKernel and IntelliJ module and Eclipse project based on the name of the
+directory in which it is run.
 If the directory is:
 
 <pre>
@@ -36,6 +37,9 @@ and the initializeModule.gy script is run in this directory, it will create the 
 associated directories:
 
 <pre>
+../.classpath
+../.project
+../pom.xml
 ../src/main/java/net/databliss/netkernel/layer0/doc/license-commercial.txt
 ../src/main/java/net/databliss/netkernel/layer0/doc/license-mit.txt
 ../src/main/java/net/databliss/netkernel/layer0/doc/title.txt
@@ -43,8 +47,12 @@ associated directories:
 ../src/main/resources/module.xml
 ../src/main/resources/etc/system/Books.xml
 ../src/main/resources/etc/system/Docs.xml
+../src/main/resources/etc/system/Tests.xml
 ../src/main/resources/resources/mappers/httpMapper.xml
 ../src/main/resources/resources/mappers/serviceMapper.xml
+../src/main/resources/tests/testList.xml
+../src/main/test/java
+../src/main/test/resources
 ../src/urn.net.databliss.netkernel.layer0.iml
 </pre>
 
