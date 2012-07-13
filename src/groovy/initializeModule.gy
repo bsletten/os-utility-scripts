@@ -164,6 +164,19 @@ def moduleXML = """\
   </rootspace>
 
 
+  <rootspace
+    name="System / Service / Test
+    public="true"
+    uri="urn:${classPath.replace('/',':')}:test"
+    >
+
+    <fileset>
+      <regex>res:/etc/system/(Books|Docs).xml</regex>
+    </fileset>
+    <fileset>
+      <regex>res:/${classPath}/doc/.*</regex>
+    </fileset>
+  </rootspace>
 
   <rootspace
     name="System / Service / Documentation"
@@ -178,6 +191,7 @@ def moduleXML = """\
       <regex>res:/${classPath}/doc/.*</regex>
     </fileset>
   </rootspace>
+
 </module>
 """
 
